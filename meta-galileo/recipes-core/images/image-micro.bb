@@ -13,6 +13,7 @@ IMAGE_ROOTFS_SIZE = "2048"
 EXTRA_IMAGECMD_append_ext2 = " -N 2000"
 
 IMAGE_FEATURES += "package-management"
+IMAGE_FEATURES += "ssh-server-dropbear"
 #ROOTFS_POSTPROCESS_COMMAND += "remove_packaging_data_files ; "
 
 IMAGE_INSTALL += "kernel-modules"
