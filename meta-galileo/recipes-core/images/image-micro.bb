@@ -9,6 +9,8 @@ LICENSE = "GPLv2"
 inherit core-image
 
 IMAGE_FSTYPES = "${INITRAMFS_TYPES}"
+IMAGE_FSTYPES += "jffs2"
+IMAGE_FSTYPES += "ext2"
 IMAGE_ROOTFS_SIZE = "2048"
 EXTRA_IMAGECMD_append_ext2 = " -N 2000"
 
