@@ -8,9 +8,9 @@ LICENSE = "GPLv2"
 
 inherit core-image
 
-IMAGE_FEATURES += "package-management"
 IMAGE_FEATURES += "ssh-server-dropbear"
-ROOTFS_POSTPROCESS_COMMAND += "remove_packaging_data_files ; "
+
+IMAGE_ROOTFS_SIZE = "512"
 
 IMAGE_INSTALL += "ethtool"
 
