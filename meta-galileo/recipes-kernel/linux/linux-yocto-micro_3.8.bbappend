@@ -6,6 +6,15 @@ KBRANCH = "standard/micro/galileo"
 
 SRC_URI = "git:///home/trz/yocto/kernels/linux-yocto-3.8-galileo.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA};name=machine,meta"
 
+KERNEL_FEATURES_append_galileo += " cfg/acpi-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/block-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/pcie-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/mmc-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/mtd-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/nohz-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/misc-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/slob.scc"
+
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
 LOCALCOUNT = "0"
