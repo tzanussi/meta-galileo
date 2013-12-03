@@ -14,6 +14,13 @@ KERNEL_FEATURES_append_galileo += " cfg/mtd-disable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/nohz-disable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/misc-disable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/slob.scc"
+KERNEL_FEATURES_append_galileo += " cfg/bug-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/printk-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/inet-disable.scc"
+KERNEL_FEATURES_append_galileo += " cfg/user-io-disable.scc"
+
+# KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
+# KERNEL_FEATURES_append_galileo += " cfg/net-disable.scc"
 
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
