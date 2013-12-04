@@ -19,8 +19,10 @@ KERNEL_FEATURES_append_galileo += " cfg/printk-disable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/inet-disable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/user-io-disable.scc"
 
-# KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
 # KERNEL_FEATURES_append_galileo += " cfg/net-disable.scc"
+
+# KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
+# KERNEL_FEATURES_append_galileo += " cfg/loglevel-debug.scc"
 
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
