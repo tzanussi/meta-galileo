@@ -34,7 +34,8 @@ SRC_URI += "file://echo.c \
 EXTRA_OEMAKE = "\
     'ARCH=linux' \
     'CC=${CC}' \
-    'CFLAGS=${CFLAGS} -I$(LWIPDIR)/include -I$(LWIPARCH)/include -I$(LWIPDIR)/include/ipv4 \
+    'CFLAGS=${CFLAGS} -g -Wall -pedantic -D$(ARCH) -DIPv4 -Os -fpack-struct -DLWIP_DEBUG \
+	-I$(LWIPDIR)/include -I$(LWIPARCH)/include -I$(LWIPDIR)/include/ipv4 \
 	-I$(LWIPDIR)/include/ipv6 -I. -I$(CONTRIBDIR)/apps/snmp_private_mib' \
 "
 
