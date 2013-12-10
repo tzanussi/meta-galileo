@@ -11,6 +11,7 @@ inherit core-image
 IMAGE_FEATURES += "ssh-server-dropbear"
 
 IMAGE_ROOTFS_SIZE = "512"
+#IMAGE_EXTRA_SPACE = "20000"
 
 IMAGE_INSTALL += "ethtool"
 
@@ -22,6 +23,10 @@ IMAGE_DEV_INSTALL += "strace"
 IMAGE_DEV_INSTALL += "ppp"
 IMAGE_DEV_INSTALL += "linuxptp"
 IMAGE_DEV_INSTALL += "libstdc++"
+IMAGE_DEV_INSTALL += "lwip-echo"
+#IMAGE_DEV_INSTALL += "lwip-simhost"
+IMAGE_DEV_INSTALL += "sendraw"
+IMAGE_DEV_INSTALL += "recvraw"
 
 IMAGE_DEV_INSTALL += "openssh"
 IMAGE_DEV_INSTALL += "wireless-tools"
