@@ -23,6 +23,8 @@ SRC_URI = "git:///home/trz/yocto/micro-net/micro_yocto-linux-yocto-3-8-galileo.g
 
 KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/loglevel-debug.scc"
+KERNEL_FEATURES_append_galileo += " cfg/slub.scc"
+KERNEL_FEATURES_append_galileo += " cfg/slub-stats.scc"
 
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
