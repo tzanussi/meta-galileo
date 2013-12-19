@@ -1,3 +1,8 @@
+/*
+  From "Packet Sniffer Code in C using Linux Sockets (BSD) – Part 2" By Silver Moon,
+  http://www.binarytides.com/packet-sniffer-code-in-c-using-linux-sockets-bsd-part-2
+ */
+
 #include<netinet/in.h>
 #include<errno.h>
 #include<netdb.h>
@@ -17,61 +22,49 @@
 #include<sys/time.h>
 #include<sys/types.h>
 #include<unistd.h>
+
+#include "netif/etharp.h"
  
 void ProcessPacket(unsigned char* , int);
 void print_ip_header(unsigned char* , int);
 void print_tcp_packet(unsigned char * , int );
 void print_udp_packet(unsigned char * , int );
 void print_icmp_packet(unsigned char* , int );
+void print_arp_packet(unsigned char* buf, int len);
 void PrintData (unsigned char* , int);
  
-FILE *logfile;
+static FILE *logfile;
 struct sockaddr_in source,dest;
 int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0,i,j; 
- 
-int main()
+
+void dump_start(char *logfile_name)
 {
-    int saddr_size , data_size;
-    struct sockaddr saddr;
-         
-    unsigned char *buffer = (unsigned char *) malloc(65536); //Its Big!
-     
-    logfile=fopen("log.txt","w");
-    if(logfile==NULL) 
-    {
-        printf("Unable to create log.txt file.");
+    logfile=fopen(logfile_name, "w");
+
+    if(logfile==NULL) {
+	    printf("Unable to create log file %s.", logfile_name);
     }
-    printf("Starting...\n");
-     
-    int sock_raw = socket( AF_PACKET , SOCK_RAW , htons(ETH_P_ALL)) ;
-    //setsockopt(sock_raw , SOL_SOCKET , SO_BINDTODEVICE , "eth0" , strlen("eth0")+ 1 );
-     
-    if(sock_raw < 0)
-    {
-        //Print the error with proper message
-        perror("Socket Error");
-        return 1;
-    }
-    while(1)
-    {
-        saddr_size = sizeof saddr;
-        //Receive a packet
-        data_size = recvfrom(sock_raw , buffer , 65536 , 0 , &saddr , (socklen_t*)&saddr_size);
-        if(data_size <0 )
-        {
-            printf("Recvfrom error , failed to get packets\n");
-            return 1;
-        }
-        //Now process the packet
-        ProcessPacket(buffer , data_size);
-    }
-    close(sock_raw);
-    printf("Finished");
-    return 0;
+
+    printf("Starting packet dump to %s...\n", logfile_name);
 }
- 
-void ProcessPacket(unsigned char* buffer, int size)
+
+void dump_stop(void)
 {
+	close(logfile);
+
+	printf("Packet dump stopped.\n");
+}
+
+#define PROTO_ARP 0x608
+
+void dump_packet(unsigned char* buffer, int size)
+{
+    struct ethhdr *eth = (struct ethhdr *)buffer;
+    if (((unsigned short)eth->h_proto) == PROTO_ARP)
+	    print_arp_packet(buffer, size);
+
+    print_ethernet_header(buffer, size);
+
     //Get the IP Header part of this packet , excluding the ethernet header
     struct iphdr *iph = (struct iphdr*)(buffer + sizeof(struct ethhdr));
     ++total;
@@ -100,7 +93,8 @@ void ProcessPacket(unsigned char* buffer, int size)
             ++others;
             break;
     }
-    printf("TCP : %d   UDP : %d   ICMP : %d   IGMP : %d   Others : %d   Total : %d\r", tcp , udp , icmp , igmp , others , total);
+    fprintf(logfile, "TCP : %d   UDP : %d   ICMP : %d   IGMP : %d   Others : %d   Total : %d\n", tcp , udp , icmp , igmp , others , total);
+    fflush(logfile);
 }
  
 void print_ethernet_header(unsigned char* Buffer, int Size)
@@ -278,6 +272,30 @@ void print_icmp_packet(unsigned char* Buffer , int Size)
     //Move the pointer ahead and reduce the size of string
     PrintData(Buffer + header_size , (Size - header_size) );
      
+    fprintf(logfile , "\n###########################################################");
+}
+
+void print_arp_packet(unsigned char* buf, int len)
+{
+    struct etharp_hdr *arp = (struct etharp_hdr*)(buf + sizeof(struct ethhdr));
+
+    ip_addr_t sipaddr, dipaddr;
+
+    IPADDR2_COPY(&sipaddr, &arp->sipaddr);
+    IPADDR2_COPY(&dipaddr, &arp->dipaddr);
+
+    print_ethernet_header(buf, len);
+
+    fprintf(logfile , "\n\n***********************ARP Packet*************************\n");
+    fprintf(logfile , "   |-Hardware Type       : %u \n",(unsigned short)arp->hwtype);
+    fprintf(logfile , "   |-Protocol Type       : %u \n",(unsigned short)arp->proto);
+    fprintf(logfile , "   |-Hardware Address Len: %u \n",(unsigned char)arp->hwlen);
+    fprintf(logfile , "   |-Protocol Address Len: %u \n",(unsigned char)arp->protolen);
+    fprintf(logfile , "   |-Protocol            : %u \n",(unsigned short)arp->opcode);
+    fprintf(logfile , "   |-Sender Address      : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", arp->shwaddr.addr[0] , arp->shwaddr.addr[1] , arp->shwaddr.addr[2] , arp->shwaddr.addr[3] , arp->shwaddr.addr[4] , arp->shwaddr.addr[5] );
+    fprintf(logfile , "   |-Sender IP           : %d.%d.%d.%d\n", ip4_addr1_16(&sipaddr), ip4_addr2_16(&sipaddr), ip4_addr3_16(&sipaddr), ip4_addr4_16(&sipaddr));
+    fprintf(logfile , "   |-Target Address      : %.2X-%.2X-%.2X-%.2X-%.2X-%.2X \n", arp->dhwaddr.addr[0] , arp->dhwaddr.addr[1] , arp->dhwaddr.addr[2] , arp->dhwaddr.addr[3] , arp->dhwaddr.addr[4] , arp->dhwaddr.addr[5] );
+    fprintf(logfile , "   |-Target IP           : %d.%d.%d.%d\n", ip4_addr1_16(&dipaddr), ip4_addr2_16(&dipaddr), ip4_addr3_16(&dipaddr), ip4_addr4_16(&dipaddr));
     fprintf(logfile , "\n###########################################################");
 }
  
