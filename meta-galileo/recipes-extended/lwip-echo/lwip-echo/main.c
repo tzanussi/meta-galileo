@@ -46,35 +46,20 @@
 #include "lwip/ip.h"
 #include "lwip/ip_frag.h"
 #include "lwip/udp.h"
-#include "lwip/snmp_msg.h"
 #include "lwip/tcp_impl.h"
-#include "mintapif.h"
+#include "packetif.h"
 #include "netif/etharp.h"
 
 #include "timer.h"
 #include <signal.h>
 
 #include "echo.h"
-#include "private_mib.h"
 
 /* (manual) host IP configuration */
 static ip_addr_t ipaddr, netmask, gw;
 
-/* SNMP trap destination cmd option */
-static unsigned char trap_flag;
-static ip_addr_t trap_addr;
-
 /* nonstatic debug cmd option, exported in lwipopts.h */
 unsigned char debug_flags;
-
-/* 'non-volatile' SNMP settings
-  @todo: make these truly non-volatile */
-u8_t syscontact_str[255];
-u8_t syscontact_len = 0;
-u8_t syslocation_str[255];
-u8_t syslocation_len = 0;
-/* enable == 1, disable == 2 */
-u8_t snmpauthentraps_set = 2;
 
 static struct option longopts[] = {
   /* turn on debugging output (if build with LWIP_DEBUG) */
@@ -88,8 +73,6 @@ static struct option longopts[] = {
   /* netmask */
   {"netmask", required_argument, NULL, 'm'},
   /* ping destination */
-  {"trap_destination", required_argument, NULL, 't'},
-  /* new command line options go here! */
   {NULL,   0,                 NULL,  0}
 };
 #define NUM_OPTS ((sizeof(longopts) / sizeof(struct option)) - 1)
@@ -111,17 +94,17 @@ main(int argc, char **argv)
   sigset_t mask, oldmask, empty;
   int ch;
   char ip_str[16] = {0}, nm_str[16] = {0}, gw_str[16] = {0};
+  char *eth_dev = "eth0";
 
   /* startup defaults (may be overridden by one or more opts) */
-  IP4_ADDR(&gw, 192,168,0,1);
-  IP4_ADDR(&ipaddr, 192,168,0,2);
+  IP4_ADDR(&gw, 192,168,1,0);
+  IP4_ADDR(&ipaddr, 192,168,1,111);
   IP4_ADDR(&netmask, 255,255,255,0);
 
-  trap_flag = 0;
   /* use debug flags defined by debug.h */
   debug_flags = LWIP_DBG_OFF;
 
-  while ((ch = getopt_long(argc, argv, "dhg:i:m:t:", longopts, NULL)) != -1) {
+  while ((ch = getopt_long(argc, argv, "dhg:i:m:e:", longopts, NULL)) != -1) {
     switch (ch) {
       case 'd':
         debug_flags |= (LWIP_DBG_ON|LWIP_DBG_TRACE|LWIP_DBG_STATE|LWIP_DBG_FRESH|LWIP_DBG_HALT);
@@ -140,13 +123,7 @@ main(int argc, char **argv)
         ipaddr_aton(optarg, &netmask);
         break;
       case 't':
-        trap_flag = !0;
-        /* @todo: remove this authentraps tweak 
-          when we have proper SET & non-volatile mem */
-        snmpauthentraps_set = 1;
-        ipaddr_aton(optarg, &trap_addr);
-        strncpy(ip_str, ipaddr_ntoa(&trap_addr),sizeof(ip_str));
-        printf("SNMP trap destination %s\n", ip_str);
+        eth_dev = optarg;
         break;
       default:
         usage();
@@ -161,33 +138,21 @@ main(int argc, char **argv)
   strncpy(gw_str, ipaddr_ntoa(&gw), sizeof(gw_str));
   printf("Host at %s mask %s gateway %s\n", ip_str, nm_str, gw_str);
 
-
 #ifdef PERF
   perf_init("/tmp/minimal.perf");
 #endif /* PERF */
 
+  dump_start("packetdump.txt");
   lwip_init();
 
   printf("TCP/IP initialized.\n");
 
-  netif_add(&netif, &ipaddr, &netmask, &gw, NULL, mintapif_init, ethernet_input);
+  netif_add(&netif, &ipaddr, &netmask, &gw, eth_dev, packetif_init, ethernet_input);
   netif_set_default(&netif);
   netif_set_up(&netif);
 #if LWIP_IPV6
   netif_create_ip6_linklocal_address(&netif, 1);
 #endif 
-
-
-#if SNMP_PRIVATE_MIB != 0
-  /* initialize our private example MIB */
-  lwip_privmib_init();
-#endif
-  snmp_trap_dst_ip_set(0,&trap_addr);
-  snmp_trap_dst_enable(0,trap_flag);
-  snmp_set_syscontact(syscontact_str,&syscontact_len);
-  snmp_set_syslocation(syslocation_str,&syslocation_len);
-  snmp_set_snmpenableauthentraps(&snmpauthentraps_set);
-  snmp_init();
 
   echo_init();
 
@@ -200,7 +165,6 @@ main(int argc, char **argv)
   
   printf("Applications started.\n");
     
-
   while (1) {
     
       /* poll for input packet and ensure
@@ -211,7 +175,7 @@ main(int argc, char **argv)
 
       /* start of critical section,
          poll netif, pass packet to lwIP */
-      if (mintapif_select(&netif) > 0)
+      if (packetif_select(&netif) > 0)
       {
         /* work, immediatly end critical section 
            hoping lwIP ended quickly ... */
@@ -242,6 +206,8 @@ main(int argc, char **argv)
       }
       
   }
-  
+
+  dump_stop();
+
   return 0;
 }

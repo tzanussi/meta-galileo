@@ -6,9 +6,11 @@ SRC_URI += "file://echo.c \
 	file://echo.h \
 	file://lwipopts.h \
 	file://main.c \
+	file://packetdump.c \
+	file://packetdump.h \
 	file://Makefile \
-	file://mintapif.c \
-	file://mintapif.h \
+	file://packetif.c \
+	file://packetif.h \
 	file://README \
 	file://timer.c \
 	file://timer.h \
@@ -34,9 +36,9 @@ SRC_URI += "file://echo.c \
 EXTRA_OEMAKE = "\
     'ARCH=linux' \
     'CC=${CC}' \
-    'CFLAGS=${CFLAGS} -g -Wall -pedantic -D$(ARCH) -DIPv4 -Os -fpack-struct -DLWIP_DEBUG \
+    'CFLAGS=${CFLAGS} -g -Wall -pedantic -D$(ARCH) -DIPv4 -Os -fpack-struct \
 	-I$(LWIPDIR)/include -I$(LWIPARCH)/include -I$(LWIPDIR)/include/ipv4 \
-	-I$(LWIPDIR)/include/ipv6 -I. -I$(CONTRIBDIR)/apps/snmp_private_mib' \
+	-I$(LWIPDIR)/include/ipv6 -I. -DLWIP_DEBUG -DETHARP_DEBUG' \
 "
 
 do_install() {

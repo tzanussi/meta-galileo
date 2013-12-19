@@ -38,6 +38,9 @@
 #ifndef __LWIPOPTS_H__
 #define __LWIPOPTS_H__
 
+#define LWIP_DEBUG 1
+#define ETHARP_DEBUG LWIP_DBG_ON
+
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------
@@ -282,8 +285,8 @@
  * LWIP_SNMP==1: Turn on SNMP module. UDP must be available for SNMP
  * transport.
  */
-#define LWIP_SNMP                       1
-#define SNMP_PRIVATE_MIB                1
+#define LWIP_SNMP                       0
+#define SNMP_PRIVATE_MIB                0
 
 /*
    ----------------------------------
