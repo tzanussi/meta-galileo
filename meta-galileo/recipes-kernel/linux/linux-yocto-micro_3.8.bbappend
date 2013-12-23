@@ -25,6 +25,7 @@ KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/loglevel-debug.scc"
 KERNEL_FEATURES_append_galileo += " cfg/slub.scc"
 KERNEL_FEATURES_append_galileo += " cfg/slub-stats.scc"
+KERNEL_FEATURES_append_galileo += " cfg/gpio-user.scc"
 
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
