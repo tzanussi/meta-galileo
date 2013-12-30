@@ -19,6 +19,7 @@ EXTRA_IMAGEDEPENDS = "grub-conf"
 
 # net development packages, normally off
 NET_DEV_INSTALL += "lwip-echo"
+NET_DEV_INSTALL += "lwip-udp-echo"
 #NET_DEV_INSTALL += "lwip-simhost"
 NET_DEV_INSTALL += "sendraw"
 NET_DEV_INSTALL += "recvraw"
