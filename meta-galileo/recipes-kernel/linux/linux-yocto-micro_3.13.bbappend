@@ -4,7 +4,7 @@ PR := "${PR}.1"
 
 KBRANCH = "standard/micro/galileo"
 
-SRC_URI = "git:///home/trz/yocto/micro-test/linux-yocto-micro-3-13.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA};name=machine,meta"
+SRC_URI = "git:///home/trz/yocto/micro-test/linux-yocto-micro-3-13.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet;name=machine,meta,net-diet"
 
 KERNEL_FEATURES_append_galileo += " cfg/perf-disable.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/acpi-disable.scc"
@@ -28,16 +28,21 @@ KERNEL_FEATURES_append_galileo += " cfg/slub.scc"
 KERNEL_FEATURES_append_galileo += " cfg/slub-stats.scc"
 KERNEL_FEATURES_append_galileo += " cfg/gpio-user.scc"
 
+KERNEL_FEATURES_append_galileo += " features/net/diet.scc"
+
 #KERNEL_FEATURES_append_galileo += " cfg/net/ip-ping.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net/tcp-metrics.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net/ethtool.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net/lpf-filter.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/rtnetlink.scc"
+KERNEL_FEATURES_append_galileo += " cfg/net/rtnetlink.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net/ip-offload.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net/mib-stats.scc"
+#KERNEL_FEATURES_append_galileo += " cfg/net/tcp-fastopen.scc"
+KERNEL_FEATURES_append_galileo += " cfg/net/inet-raw.scc"
 
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
+SRCREV_net-diet="${AUTOREV}"
 LOCALCOUNT = "0"
 
 COMPATIBLE_MACHINE_ = "galileo"
