@@ -1,0 +1,305 @@
+Index: binutils-2.24.51.0.3/bfd/aoutx.h
+===================================================================
+--- binutils-2.24.51.0.3.orig/bfd/aoutx.h
++++ binutils-2.24.51.0.3/bfd/aoutx.h
+@@ -798,6 +798,7 @@ NAME (aout, machine_type) (enum bfd_arch
+ 	case bfd_mach_mipsisa64r2:
+ 	case bfd_mach_mips_sb1:
+ 	case bfd_mach_mips_xlr:
++	case bfd_mach_mips_xlp:
+ 	  /* FIXME: These should be MIPS3, MIPS4, MIPS16, MIPS32, etc.  */
+ 	  arch_flags = M_MIPS2;
+ 	  break;
+Index: binutils-2.24.51.0.3/bfd/archures.c
+===================================================================
+--- binutils-2.24.51.0.3.orig/bfd/archures.c
++++ binutils-2.24.51.0.3/bfd/archures.c
+@@ -178,6 +178,7 @@ DESCRIPTION
+ .#define bfd_mach_mips_octeonp		6601
+ .#define bfd_mach_mips_octeon2		6502
+ .#define bfd_mach_mips_xlr              887682   {* decimal 'XLR'  *}
++.#define bfd_mach_mips_xlp              887680   {* decimal 'XLP'  *}
+ .#define bfd_mach_mipsisa32             32
+ .#define bfd_mach_mipsisa32r2           33
+ .#define bfd_mach_mipsisa64             64
+Index: binutils-2.24.51.0.3/bfd/bfd-in2.h
+===================================================================
+--- binutils-2.24.51.0.3.orig/bfd/bfd-in2.h
++++ binutils-2.24.51.0.3/bfd/bfd-in2.h
+@@ -1941,6 +1941,7 @@ enum bfd_architecture
+ #define bfd_mach_mips_octeonp          6601
+ #define bfd_mach_mips_octeon2          6502
+ #define bfd_mach_mips_xlr              887682   /* decimal 'XLR'  */
++#define bfd_mach_mips_xlp              887680   /* decimal 'XLP'  */
+ #define bfd_mach_mipsisa32             32
+ #define bfd_mach_mipsisa32r2           33
+ #define bfd_mach_mipsisa64             64
+Index: binutils-2.24.51.0.3/bfd/config.bfd
+===================================================================
+--- binutils-2.24.51.0.3.orig/bfd/config.bfd
++++ binutils-2.24.51.0.3/bfd/config.bfd
+@@ -1033,6 +1033,11 @@ case "${targ}" in
+     targ_defvec=bfd_elf32_littlemips_vec
+     targ_selvecs="bfd_elf32_bigmips_vec bfd_elf64_bigmips_vec bfd_elf64_littlemips_vec"
+     ;;
++  mipsisa64*-*-elf*)
++	targ_defvec=bfd_elf32_tradbigmips_vec
++	targ_selvecs="bfd_elf32_tradlittlemips_vec bfd_elf64_tradbigmips_vec bfd_elf64_tradlittlemips_vec"
++	want64=true
++	;;
+   mips*-*-elf* | mips*-*-rtems* | mips*-*-vxworks | mips*-*-windiss)
+     targ_defvec=bfd_elf32_bigmips_vec
+     targ_selvecs="bfd_elf32_littlemips_vec bfd_elf64_bigmips_vec bfd_elf64_littlemips_vec"
+Index: binutils-2.24.51.0.3/bfd/cpu-mips.c
+===================================================================
+--- binutils-2.24.51.0.3.orig/bfd/cpu-mips.c
++++ binutils-2.24.51.0.3/bfd/cpu-mips.c
+@@ -99,7 +99,8 @@ enum
+   I_mipsocteonp,
+   I_mipsocteon2,
+   I_xlr,
+-  I_micromips
++  I_micromips,
++  I_xlp
+ };
+ 
+ #define NN(index) (&arch_info_struct[(index) + 1])
+@@ -143,7 +144,8 @@ static const bfd_arch_info_type arch_inf
+   N (64, 64, bfd_mach_mips_octeonp,"mips:octeon+",  FALSE, NN(I_mipsocteonp)),
+   N (64, 64, bfd_mach_mips_octeon2,"mips:octeon2",  FALSE, NN(I_mipsocteon2)),
+   N (64, 64, bfd_mach_mips_xlr, "mips:xlr",       FALSE, NN(I_xlr)),
+-  N (64, 64, bfd_mach_mips_micromips,"mips:micromips",FALSE,0)
++  N (64, 64, bfd_mach_mips_micromips,"mips:micromips",FALSE,NN(I_micromips)),
++  N (64, 64, bfd_mach_mips_xlp, "mips:xlp",      FALSE, 0)
+ };
+ 
+ /* The default architecture is mips:3000, but with a machine number of
+Index: binutils-2.24.51.0.3/bfd/elfxx-mips.c
+===================================================================
+--- binutils-2.24.51.0.3.orig/bfd/elfxx-mips.c
++++ binutils-2.24.51.0.3/bfd/elfxx-mips.c
+@@ -6425,6 +6425,9 @@ _bfd_elf_mips_mach (flagword flags)
+     case E_MIPS_MACH_XLR:
+       return bfd_mach_mips_xlr;
+ 
++	case E_MIPS_MACH_XLP:
++      return bfd_mach_mips_xlp;
++
+     default:
+       switch (flags & EF_MIPS_ARCH)
+ 	{
+@@ -11640,6 +11643,10 @@ mips_set_isa_flags (bfd *abfd)
+       val = E_MIPS_ARCH_64R2 | E_MIPS_MACH_OCTEON2;
+       break;
+ 
++	case bfd_mach_mips_xlp:
++	  val = E_MIPS_ARCH_64R2 | E_MIPS_MACH_XLP;
++	  break;
++
+     case bfd_mach_mipsisa32:
+       val = E_MIPS_ARCH_32;
+       break;
+@@ -14220,6 +14227,7 @@ static const struct mips_mach_extension
+   { bfd_mach_mips_octeon2, bfd_mach_mips_octeonp },
+   { bfd_mach_mips_octeonp, bfd_mach_mips_octeon },
+   { bfd_mach_mips_octeon, bfd_mach_mipsisa64r2 },
++  { bfd_mach_mips_xlp, bfd_mach_mipsisa64r2 },
+ 
+   /* MIPS64 extensions.  */
+   { bfd_mach_mipsisa64r2, bfd_mach_mipsisa64 },
+Index: binutils-2.24.51.0.3/binutils/readelf.c
+===================================================================
+--- binutils-2.24.51.0.3.orig/binutils/readelf.c
++++ binutils-2.24.51.0.3/binutils/readelf.c
+@@ -2845,6 +2845,7 @@ get_machine_flags (unsigned e_flags, uns
+ 	    case E_MIPS_MACH_OCTEON: strcat (buf, ", octeon"); break;
+ 	    case E_MIPS_MACH_OCTEON2: strcat (buf, ", octeon2"); break;
+ 	    case E_MIPS_MACH_XLR:  strcat (buf, ", xlr"); break;
++		case E_MIPS_MACH_XLP:  strcat (buf, ", xlp"); break;
+ 	    case 0:
+ 	    /* We simply ignore the field in this case to avoid confusion:
+ 	       MIPS ELF does not specify EF_MIPS_MACH, it is a GNU
+Index: binutils-2.24.51.0.3/gas/config/tc-mips.c
+===================================================================
+--- binutils-2.24.51.0.3.orig/gas/config/tc-mips.c
++++ binutils-2.24.51.0.3/gas/config/tc-mips.c
+@@ -486,6 +486,7 @@ static int mips_32bitmode = 0;
+    || mips_opts.arch == CPU_RM7000                    \
+    || mips_opts.arch == CPU_VR5500                    \
+    || mips_opts.micromips                             \
++   || mips_opts.arch == CPU_XLP                       \
+    )
+ 
+ /* Whether the processor uses hardware interlocks to protect reads
+@@ -515,6 +516,7 @@ static int mips_32bitmode = 0;
+     && mips_opts.isa != ISA_MIPS3)                    \
+    || mips_opts.arch == CPU_R4300                     \
+    || mips_opts.micromips                             \
++   || mips_opts.arch == CPU_XLP                       \
+    )
+ 
+ /* Whether the processor uses hardware interlocks to protect reads
+@@ -17919,7 +17921,7 @@ static const struct mips_cpu_info mips_c
+   /* Broadcom XLP.
+      XLP is mostly like XLR, with the prominent exception that it is
+      MIPS64R2 rather than MIPS64.  */
+-  { "xlp",	      0, 0,			ISA_MIPS64R2, CPU_XLR },
++  { "xlp",	      0, 0,			ISA_MIPS64R2, CPU_XLP },
+ 
+   /* End marker */
+   { NULL, 0, 0, 0, 0 }
+Index: binutils-2.24.51.0.3/gas/configure
+===================================================================
+--- binutils-2.24.51.0.3.orig/gas/configure
++++ binutils-2.24.51.0.3/gas/configure
+@@ -12042,6 +12042,9 @@ _ACEOF
+ 	  mipsisa64r2 | mipsisa64r2el)
+ 	    mips_cpu=mips64r2
+ 	    ;;
++	  mipsisa64r2nlm | mipsisa64r2nlmel)
++		mips_cpu=xlp
++		;;
+ 	  mipstx39 | mipstx39el)
+ 	    mips_cpu=r3900
+ 	    ;;
+Index: binutils-2.24.51.0.3/gas/configure.tgt
+===================================================================
+--- binutils-2.24.51.0.3.orig/gas/configure.tgt
++++ binutils-2.24.51.0.3/gas/configure.tgt
+@@ -327,7 +327,7 @@ case ${generic_target} in
+ 					fmt=elf em=freebsd ;;
+   mips-*-sysv4*MP* | mips-*-gnu*)	fmt=elf em=tmips ;;
+   mips*-sde-elf* | mips*-mti-elf*)	fmt=elf em=tmips ;;
+-  mips-*-elf* | mips-*-rtems*)		fmt=elf ;;
++  mips-*-elf* | mips-*-rtems*)		fmt=elf em=tmips ;;
+   mips-*-netbsd*)			fmt=elf em=tmips ;;
+   mips-*-openbsd*)			fmt=elf em=tmips ;;
+ 
+Index: binutils-2.24.51.0.3/include/elf/mips.h
+===================================================================
+--- binutils-2.24.51.0.3.orig/include/elf/mips.h
++++ binutils-2.24.51.0.3/include/elf/mips.h
+@@ -274,6 +274,7 @@ END_RELOC_NUMBERS (R_MIPS_maxext)
+ #define E_MIPS_MACH_SB1         0x008a0000
+ #define E_MIPS_MACH_OCTEON	0x008b0000
+ #define E_MIPS_MACH_XLR     	0x008c0000
++#define E_MIPS_MACH_XLP         0x008e0000
+ #define E_MIPS_MACH_OCTEON2	0x008d0000
+ #define E_MIPS_MACH_5400	0x00910000
+ #define E_MIPS_MACH_5900	0x00920000
+Index: binutils-2.24.51.0.3/include/opcode/mips.h
+===================================================================
+--- binutils-2.24.51.0.3.orig/include/opcode/mips.h
++++ binutils-2.24.51.0.3/include/opcode/mips.h
+@@ -1131,8 +1131,10 @@ static const unsigned int mips_isa_table
+ #define INSN_LOONGSON_2F          0x80000000
+ /* Loongson 3A.  */
+ #define INSN_LOONGSON_3A          0x00000400
+-/* RMI Xlr instruction */
+-#define INSN_XLR                 0x00000020
++/* Netlogic Xlr instruction */
++#define INSN_XLR		0x00000020
++/* Netlogic XlP instruction */
++#define INSN_XLP		0x00000040
+ 
+ /* DSP ASE */
+ #define ASE_DSP			0x00000001
+@@ -1214,6 +1216,7 @@ static const unsigned int mips_isa_table
+ #define CPU_OCTEONP	6601
+ #define CPU_OCTEON2	6502
+ #define CPU_XLR     	887682   	/* decimal 'XLR'   */
++#define CPU_XLP         887680      /* decimal 'XLP'   */
+ 
+ /* Return true if the given CPU is included in INSN_* mask MASK.  */
+ 
+@@ -1281,6 +1284,9 @@ cpu_is_member (int cpu, unsigned int mas
+     case CPU_XLR:
+       return (mask & INSN_XLR) != 0;
+ 
++    case CPU_XLP:
++      return (mask & INSN_XLP) != 0;
++
+     default:
+       return FALSE;
+     }
+Index: binutils-2.24.51.0.3/ld/configure.tgt
+===================================================================
+--- binutils-2.24.51.0.3.orig/ld/configure.tgt
++++ binutils-2.24.51.0.3/ld/configure.tgt
+@@ -457,6 +457,8 @@ mips*el-sde-elf*)	targ_emul=elf32ltsmip
+ mips*-sde-elf* | mips*-mti-elf*)
+ 			targ_emul=elf32btsmip
+ 			targ_extra_emuls="elf32ltsmip elf32btsmipn32 elf64btsmip elf32ltsmipn32 elf64ltsmip" ;;
++mipsisa64*-*-elf*)	targ_emul=elf32btsmip
++			targ_extra_emuls="elf32ltsmip elf64btsmip elf64ltsmip" ;;
+ mips64*el-ps2-elf*)	targ_emul=elf32lr5900n32
+ 			targ_extra_emuls="elf32lr5900"
+ 			targ_extra_libpath=$targ_extra_emuls ;;
+Index: binutils-2.24.51.0.3/opcodes/mips-opc.c
+===================================================================
+--- binutils-2.24.51.0.3.orig/opcodes/mips-opc.c
++++ binutils-2.24.51.0.3/opcodes/mips-opc.c
+@@ -287,7 +287,8 @@ decode_mips_operand (const char *p)
+ #define IOCT	(INSN_OCTEON | INSN_OCTEONP | INSN_OCTEON2)
+ #define IOCTP	(INSN_OCTEONP | INSN_OCTEON2)
+ #define IOCT2	INSN_OCTEON2
+-#define XLR     INSN_XLR
++#define XLR	INSN_XLR
++#define XLP	INSN_XLP
+ #define IVIRT	ASE_VIRT
+ #define IVIRT64	ASE_VIRT64
+ 
+@@ -910,6 +911,7 @@ const struct mips_opcode mips_builtin_op
+ {"cins",		"t,r,+p,+S",	0x70000032, 0xfc00003f, WR_1|RD_2,		0,		IOCT,		0,	0 },
+ {"clo",			"U,s",		0x70000021, 0xfc0007ff, WR_1|RD_2, 	0,		I32|N55,	0,	0 },
+ {"clz",			"U,s",		0x70000020, 0xfc0007ff, WR_1|RD_2, 	0,		I32|N55,	0,	0 },
++{"crc",			"d,s,t",	0x7000001c, 0xfc0007ff,	WR_1|RD_2|RD_3,	0,		XLP, 		0,	0 },
+ {"ctc0",		"t,G",		0x40c00000, 0xffe007ff,	RD_1|WR_CC|COD,		0,		I1,		0,	IOCT|IOCTP|IOCT2 },
+ {"ctc1",		"t,G",		0x44c00000, 0xffe007ff,	RD_1|WR_CC|COD|FP_S,	0,		I1,		0,	0 },
+ {"ctc1",		"t,S",		0x44c00000, 0xffe007ff,	RD_1|WR_CC|COD|FP_S,	0,		I1,		0,	0 },
+@@ -942,10 +944,11 @@ const struct mips_opcode mips_builtin_op
+ {"daddiu",		"t,r,j",	0x64000000, 0xfc000000, WR_1|RD_2,		0,		I3,		0,	0 },
+ {"daddu",		"d,v,t",	0x0000002d, 0xfc0007ff, WR_1|RD_2|RD_3,		0,		I3,		0,	0 },
+ {"daddu",		"t,r,I",	0,    (int) M_DADDU_I,	INSN_MACRO,		0,		I3,		0,	0 },
+-{"daddwc",		"d,s,t", 	0x70000038, 0xfc0007ff, WR_1|RD_2|RD_3|WR_C0|RD_C0, 0,		XLR,		0,	0 },
++{"daddwc",		"d,s,t", 	0x70000038, 0xfc0007ff, WR_1|RD_2|RD_3|WR_C0|RD_C0, 0,		XLR|XLP,	0,	0 },
+ {"dbreak",		"",		0x7000003f, 0xffffffff,	0,			0,		N5,		0,	0 },
+ {"dclo",		"U,s",	 	0x70000025, 0xfc0007ff, WR_1|RD_2, 	0,		I64|N55,	0,	0 },
+ {"dclz",		"U,s",	 	0x70000024, 0xfc0007ff, WR_1|RD_2, 	0,		I64|N55,	0,	0 },
++{"dcrc",		"d,s,t",	0x7000001d, 0xfc0007ff, WR_1|RD_2|RD_3,	0,		XLP, 		0,	0 },
+ /* dctr and dctw are used on the r5000.  */
+ {"dctr",		"o(b)",	 	0xbc050000, 0xfc1f0000, RD_2,			0,		I3,		0,	0 },
+ {"dctw",		"o(b)",		0xbc090000, 0xfc1f0000, RD_2,			0,		I3,		0,	0 },
+@@ -1009,6 +1012,7 @@ const struct mips_opcode mips_builtin_op
+ {"dmfc0",		"t,G,H",	0x40200000, 0xffe007f8,	WR_1|RD_C0|LCD,		0,		I64,		0,	0 },
+ {"dmfgc0",		"t,G",		0x40600100, 0xffe007ff, WR_1|RD_C0|LCD,		0,		0,		IVIRT64, 0 },
+ {"dmfgc0",		"t,G,H",	0x40600100, 0xffe007f8, WR_1|RD_C0|LCD, 	0,		0,		IVIRT64, 0 },
++{"dmfur",		"t,d",		0x7000001e, 0xffe007ff, WR_1,			0,		XLP,		0,	0 },
+ {"dmt",			"",		0x41600bc1, 0xffffffff, TRAP,			0,		0,		MT32,	0 },
+ {"dmt",			"t",		0x41600bc1, 0xffe0ffff, WR_1|TRAP,		0,		0,		MT32,	0 },
+ {"dmtc0",		"t,G",		0x40a00000, 0xffe007ff,	RD_1|WR_C0|WR_CC|COD,	0,		I3,		0,	EE },
+@@ -1023,6 +1027,8 @@ const struct mips_opcode mips_builtin_op
+ /* dmtc2 is at the bottom of the table.  */
+ /* dmfc3 is at the bottom of the table.  */
+ /* dmtc3 is at the bottom of the table.  */
++{"dmtur",		"t,d",		0x7000001f, 0xffe007ff,	RD_1,			0,		XLP,		0,	0 },
++{"dmul",		"d,s,t",	0x70000006, 0xfc0007ff,	WR_1|RD_2|RD_3,		0,		XLP,		0,	0 },
+ {"dmul",		"d,v,t",	0x70000003, 0xfc0007ff, WR_1|RD_2|RD_3|WR_HILO,	0,		IOCT,		0,	0 },
+ {"dmul",		"d,v,t",	0,    (int) M_DMUL,	INSN_MACRO,		0,		I3,		0,	M32 },
+ {"dmul",		"d,v,I",	0,    (int) M_DMUL_I,	INSN_MACRO,		0,		I3,		0,	M32 },
+@@ -1361,10 +1367,13 @@ const struct mips_opcode mips_builtin_op
+ /* move is at the top of the table.  */
+ {"msgn.qh",		"X,Y,Q",	0x78200000, 0xfc20003f,	WR_1|RD_2|RD_3|FP_D,	0,		0,		MX,	0 },
+ {"msgsnd",		"t",		0,    (int) M_MSGSND,	INSN_MACRO,		0,		XLR,		0,	0 },
++{"msgsnds",		"d,t",		0x4a000001, 0xffe007ff,	WR_1|RD_2|RD_C0|WR_C0,	0,		XLP,		0,	0 },
+ {"msgld",		"", 		0,    (int) M_MSGLD,	INSN_MACRO,		0,		XLR,		0,	0 },
+ {"msgld",		"t",		0,    (int) M_MSGLD_T,	INSN_MACRO,		0,		XLR,		0,	0 },
+-{"msgwait",		"", 		0,    (int) M_MSGWAIT,	INSN_MACRO,		0,		XLR,		0,	0 },
+-{"msgwait",		"t",		0,    (int) M_MSGWAIT_T,INSN_MACRO,		0,		XLR,		0,	0 },
++{"msglds",		"d,t",		0x4a000002, 0xffe007ff,	WR_1|RD_2|RD_C0|WR_C0,	0,		XLP,		0,	0 },
++{"msgwait",		"",		0,    (int) M_MSGWAIT,  INSN_MACRO,		0,		XLR|XLP,	0,	0 },
++{"msgwait",		"t",		0,    (int) M_MSGWAIT_T,INSN_MACRO,		0,		XLR|XLP,	0,	0 },
++{"msgsync",		"",		0x4a000004, 0xffffffff,0,			0,		XLP,		0,	0 },
+ {"msub.d",		"D,R,S,T",	0x4c000029, 0xfc00003f, WR_1|RD_2|RD_3|RD_4|FP_D, 0,		I4_33,		0,	0 },
+ {"msub.d",		"D,S,T",	0x46200019, 0xffe0003f,	WR_1|RD_2|RD_3|FP_D,	0,		IL2E,		0,	0 },
+ {"msub.d",		"D,S,T",	0x72200019, 0xffe0003f,	WR_1|RD_2|RD_3|FP_D,	0,		IL2F,		0,	0 },
