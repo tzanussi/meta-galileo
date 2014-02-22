@@ -23,6 +23,8 @@ KERNEL_FEATURES_append_galileo += " cfg/perf-disable.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/inet-disable.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net-disable.scc"
 
+# Don't forget to turn on perf if enabling ftrace (compile problems)
+#KERNEL_FEATURES_append_galileo += " features/ftrace/ftrace.scc"
 KERNEL_FEATURES_append_galileo += " features/ftrace/ftrace.scc"
 KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
 KERNEL_FEATURES_append_galileo += " cfg/loglevel-debug.scc"
@@ -31,6 +33,9 @@ KERNEL_FEATURES_append_galileo += " cfg/slub-stats.scc"
 KERNEL_FEATURES_append_galileo += " cfg/gpio-user.scc"
 
 KERNEL_FEATURES_append_galileo += " features/net/diet.scc"
+
+# Don't forget to turn ftrace off if using lto
+KERNEL_FEATURES_append_galileo += " features/lto/lto.scc"
 
 #KERNEL_FEATURES_append_galileo += " cfg/net/ip-ping.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net/tcp-metrics.scc"
