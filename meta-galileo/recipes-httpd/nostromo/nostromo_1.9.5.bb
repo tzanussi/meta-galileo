@@ -18,6 +18,8 @@ TARGET_CC_ARCH += "${LDFLAGS}"
 
 DEPENDS = "openssl"
 
+RDEPENDS_${PN} = "micro-cgi"
+
 inherit update-rc.d useradd
 
 INITSCRIPT_NAME = "nostromo"

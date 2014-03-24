@@ -14,6 +14,8 @@ IMAGE_ROOTFS_SIZE = "512"
 #IMAGE_EXTRA_SPACE = "20000"
 
 IMAGE_INSTALL += "ethtool"
+#IMAGE_INSTALL += "lighttpd"
+IMAGE_INSTALL += "nostromo"
 
 EXTRA_IMAGEDEPENDS = "grub-conf"
 
