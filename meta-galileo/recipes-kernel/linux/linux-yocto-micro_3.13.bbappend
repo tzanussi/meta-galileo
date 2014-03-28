@@ -24,6 +24,8 @@ KERNEL_FEATURES_append_galileo += " cfg/user-io-disable.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/net-disable.scc"
 
 # Don't forget to turn on perf if enabling ftrace (compile problems)
+# Also, stacktrace and hash triggers require frame pointers
+#KERNEL_FEATURES_append_galileo += " cfg/frame-pointers-enable.scc"
 #KERNEL_FEATURES_append_galileo += " features/ftrace/ftrace.scc"
 KERNEL_FEATURES_append_galileo += " features/ftrace/ftrace.scc"
 #KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
