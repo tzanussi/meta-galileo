@@ -4,7 +4,8 @@ SRC_URI += "file://mdev.sh \
             file://mqueue.sh \
             file://sysfs_devtmpfs.sh \
             file://mdev.conf \
-            file://automount.sh"
+            file://automount.sh \
+            file://sysfs.sh"
 
 do_install_append() {
 	install -d ${D}${sysconfdir}
