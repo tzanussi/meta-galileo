@@ -1,0 +1,725 @@
+Index: nostromo-1.9.5/src/nhttpd/GNUmakefile
+===================================================================
+--- nostromo-1.9.5.orig/src/nhttpd/GNUmakefile
++++ nostromo-1.9.5/src/nhttpd/GNUmakefile
+@@ -1,7 +1,7 @@
+ CFLAGS := -O2 -pipe -Wall -Wstrict-prototypes -c
+ 
+ nhttpd:	main.o http.o sys.o
+-	$(CC) -L../libmy -L../libbsd -o nhttpd main.o http.o sys.o -lmy -lbsd -lssl -lcrypt
++	$(CC) -L../libmy -L../libbsd -o nhttpd main.o http.o sys.o -lmy -lbsd -lcrypt
+ #	$(STRIP) nhttpd
+ 	nroff -Tascii -c -mandoc nhttpd.8 > nhttpd.cat8
+ 
+Index: nostromo-1.9.5/src/nhttpd/extern.h
+===================================================================
+--- nostromo-1.9.5.orig/src/nhttpd/extern.h
++++ nostromo-1.9.5/src/nhttpd/extern.h
+@@ -192,7 +192,6 @@ struct header {
+  * information structure for each connection
+  */
+ struct connection {
+-	SSL	*ssl;			/* Connection, SSL Object */
+ 	char	pt[8];			/* Connection, Client Port */
+ 	char	ip[24];			/* Connection, Client IP */
+ 	char	*rbuf;			/* Connection, Read buf */
+Index: nostromo-1.9.5/src/nhttpd/http.c
+===================================================================
+--- nostromo-1.9.5.orig/src/nhttpd/http.c
++++ nostromo-1.9.5/src/nhttpd/http.c
+@@ -21,7 +21,6 @@
+ #include <errno.h>
+ #include <dirent.h>
+ #include <fcntl.h>
+-#include <openssl/ssl.h>
+ #include <signal.h>
+ #include <stdarg.h>
+ #include <stdio.h>
+@@ -533,8 +532,6 @@ http_proc(const char *header, char *body
+ 			if (rh->x_agt)
+ 				cgienv[i++] = sys_benv("HTTP_USER_AGENT=%s",
+ 				    rh->rq_fv_agt);
+-			if (c[sfd].x_ssl)
+-				cgienv[i++] = sys_benv("HTTPS=on");
+ 			if (rh->x_ims)
+ 				cgienv[i++] = sys_benv("IF_MODIFIED_SINCE=%s",
+ 				    rh->rq_fv_ims);
+@@ -553,10 +550,6 @@ http_proc(const char *header, char *body
+ 			else
+ 				cgienv[i++] = sys_benv("SERVER_ADDR=%s",
+ 				    config.serverip4);
+-			if (c[sfd].x_ssl)
+-				cgienv[i++] = sys_benv("SERVER_PORT=%s",
+-				    config.sslportc);
+-			else
+ 				cgienv[i++] = sys_benv("SERVER_PORT=%s",
+ 				    config.serverportc);
+ 			cgienv[i++] = '\0';
+@@ -588,11 +581,6 @@ http_proc(const char *header, char *body
+ 				if (blen == 0 || r == 0) {
+ 					rt += blen;
+ 					for (;;) {
+-						if (c[sfd].x_ssl)
+-							rp = sys_read_ssl(
+-							    c[sfd].ssl, buf,
+-							    sizeof(buf));
+-						else
+ 							rp = sys_read(sfd,
+ 							    buf, sizeof(buf));
+ 
+@@ -652,15 +640,9 @@ http_proc(const char *header, char *body
+ 					strlcpy(x, rh->rp_header, len);
+ 					strlcat(x, buf, len);
+ 				}
+-				if (c[sfd].x_ssl) {
+-					if ((sp = sys_write_ssl(c[sfd].ssl, x,
+-					    strlen(x))) < 1)
+-						break;
+-				} else {
+ 					if ((sp = sys_write(sfd, x, strlen(x)))
+ 					    < 1)
+ 						break;
+-				}
+ 				r = 1;
+ 				free(x);
+ 				break;
+@@ -712,13 +694,8 @@ http_proc(const char *header, char *body
+ 				} else
+ 					x = buf;
+ 			}
+-			if (c[sfd].x_ssl) {
+-				if ((sp = sys_write_ssl(c[sfd].ssl, x, rp)) < 1)
+-					break;
+-			} else {
+ 				if ((sp = sys_write(sfd, x, rp)) < 1)
+ 					break;
+-			}
+ 			st += sp;
+ 			if (!x_nph && rh->x_chk)
+ 				free(x);
+@@ -726,15 +703,9 @@ http_proc(const char *header, char *body
+ 
+ 		/* send last chunk */
+ 		if (!x_nph && rh->x_chk) {
+-			if (c[sfd].x_ssl) {
+-				if ((sp = sys_write_ssl(c[sfd].ssl, http_fv_lch,
+-				    strlen(http_fv_lch))) != -1)
+-					st += sp;
+-			} else {
+ 				if ((sp = sys_write(sfd, http_fv_lch,
+ 				    strlen(http_fv_lch))) != -1)
+ 					st += sp;
+-			}
+ 		}
+ 
+ 		/* close fd to cgis stdout */
+@@ -768,10 +739,6 @@ http_proc(const char *header, char *body
+ 		sys_resetnonblock(sfd);
+ 
+ 		/* send header */
+-		if (c[sfd].x_ssl)
+-			sys_write_ssl(c[sfd].ssl, rh->rp_header,
+-			    strlen(rh->rp_header));
+-		else
+ 			sys_write(sfd, rh->rp_header, strlen(rh->rp_header));
+ 
+ 		/* initialize */
+@@ -844,15 +811,9 @@ http_proc(const char *header, char *body
+ 					x = http_chunk(buf, strlen(buf));
+ 				else
+ 					x = buf;
+-				if (c[sfd].x_ssl) {
+-					if ((sp = sys_write_ssl(c[sfd].ssl, x,
+-					    strlen(x))) == -1)
+-						break;
+-				} else {
+ 					if ((sp = sys_write(sfd, x, strlen(x)))
+ 					    == -1)
+ 						break;
+-				}
+ 				st += sp;
+ 				if (rh->x_chk)
+ 					free(x);
+@@ -872,14 +833,8 @@ http_proc(const char *header, char *body
+ 				x = http_chunk(buf, strlen(buf));
+ 			else
+ 				x = buf;
+-			if (c[sfd].x_ssl) {
+-				if ((sp = sys_write_ssl(c[sfd].ssl, x,
+-				    strlen(x))) != 1)
+-					st += sp;
+-			} else {
+ 				if ((sp = sys_write(sfd, x, strlen(x))) != 1)
+ 					st += sp;
+-			}
+ 			memset(buf, 0, sizeof(buf));
+ 			if (rh->x_chk)
+ 				free(x);
+@@ -891,23 +846,13 @@ http_proc(const char *header, char *body
+ 				x = http_chunk(buf, strlen(buf));
+ 			else
+ 				x = buf;
+-			if (c[sfd].x_ssl) {
+-				if ((sp = sys_write_ssl(c[sfd].ssl, x,
+-				    strlen(x))) != -1)
+-					st += sp;
+-			} else {
+ 				if ((sp = sys_write(sfd, x, strlen(x))) != -1)
+ 					st += sp;
+-			}
+ 			if (rh->x_chk)
+ 				free(x);
+ 
+ 			/* send last chunk */
+-			if (c[sfd].x_ssl && rh->x_chk) {
+-				if ((sp = sys_write_ssl(c[sfd].ssl, http_fv_lch,
+-				    strlen(http_fv_lch))) != -1)
+-					st += sp;
+-			} else if (rh->x_chk) {
++			if (rh->x_chk) {
+ 				if ((sp = sys_write(sfd, http_fv_lch,
+ 				    strlen(http_fv_lch))) != -1)
+ 					st += sp;
+@@ -1719,10 +1664,6 @@ http_header(const char *header_data, con
+ 			/* it is a directory without '/', send 301 */
+ 			strlcpy(status, http_s_301, sizeof(status));
+ 			/* create exact location uri */
+-			if (c[sfd].x_ssl)
+-				snprintf(h->rp_fv_loc, sizeof(h->rp_fv_loc),
+-				    "https://%s%s/", h->rq_fv_hos, h->rq_uri);
+-			else
+ 				snprintf(h->rp_fv_loc, sizeof(h->rp_fv_loc),
+ 				    "http://%s%s/", h->rq_fv_hos, h->rq_uri);
+ 			/* set 301 headers content type */
+@@ -1918,7 +1859,7 @@ http_header(const char *header_data, con
+ 		snprintf(http_sig, sizeof(http_sig),
+ 		    "<address>%s at %s Port %s</address>",
+ 		    http_fv_srv, r == 0 ? tmp : h->rq_fv_hos,
+-		    c[sfd].x_ssl ? config.sslportc : config.serverportc);
++		    config.serverportc);
+ 	}
+ 
+ 	return (h);
+Index: nostromo-1.9.5/src/nhttpd/main.c
+===================================================================
+--- nostromo-1.9.5.orig/src/nhttpd/main.c
++++ nostromo-1.9.5/src/nhttpd/main.c
+@@ -31,7 +31,6 @@
+ #include <fcntl.h>
+ #include <grp.h>
+ #include <netdb.h>
+-#include <openssl/ssl.h>
+ #include <pwd.h>
+ #include <signal.h>
+ #include <stdarg.h>
+@@ -227,9 +226,6 @@ send_full(const int sfd, const int hr)
+ 	if (len > 0) {
+ 		offset = c[sfd].pfdh[hr] + c[sfd].wsnd;
+ 
+-		if (c[sfd].x_ssl)
+-			s = sys_write_ssl(c[sfd].ssl, offset, len);
+-		else
+ 			s = sys_write_a(sfd, offset, len);
+ 		if (s != -1)
+ 			c[sfd].wsnd += s;
+@@ -296,9 +292,6 @@ send_chunk(const int sfd, const int hr)
+ 
+ 	/* send a chunk */
+ 	if (c[sfd].wred > 0) {
+-		if (c[sfd].x_ssl)
+-			s = sys_write_ssl(c[sfd].ssl, offset, len);
+-		else
+ 			s = sys_write_a(sfd, offset, len);
+ 		if (s != 1)
+ 			c[sfd].wsnd += s;
+@@ -306,10 +299,6 @@ send_chunk(const int sfd, const int hr)
+ 
+ 	/* send last chunk, cleanup */
+ 	if (c[sfd].wred < 1 || s < 0) {
+-		if (c[sfd].x_ssl)
+-			s = sys_write_ssl(c[sfd].ssl, http_fv_lch,
+-			    strlen(http_fv_lch));
+-		else
+ 			s = sys_write_a(sfd, http_fv_lch,
+ 			    strlen(http_fv_lch));
+ 
+@@ -360,9 +349,6 @@ send_file(const int sfd, const int hr)
+ 
+ 	/* send a block */
+ 	if (c[sfd].wred > 0) {
+-		if (c[sfd].x_ssl)
+-			s = sys_write_ssl(c[sfd].ssl, offset, len);
+-		else
+ 			s = sys_write_a(sfd, offset, len);
+ 		if (s != -1) {
+ 			c[sfd].pfds[hr] += h ? s - h : s;
+@@ -450,7 +436,6 @@ main(int argc, char *argv[])
+ 	socklen_t		ssize;
+ 	fd_set			*master_r, *master_w, *set_r, *set_w;
+ 	time_t			tnow;
+-	SSL_CTX			*ssl_ctx = NULL;
+ 	FILE			*file;
+ 
+ 	i = r = s = rd = sdmax = sdnow = 0;
+@@ -588,24 +573,7 @@ main(int argc, char *argv[])
+ 			config.bsdauth = 0;
+ 	}
+ #endif
+-	if (fparse(config.sslportc, "sslport", config.file,
+-	    sizeof(config.sslportc)) == -1)
+ 		config.ssl = 0;
+-	else {
+-		config.ssl = 1;
+-		config.sslport = atoi(config.sslportc);
+-		if (fparse(config.sslcert, "sslcert", config.file,
+-		    sizeof(config.sslcert))  == -1) {
+-			fprintf(stderr, "Missing <sslcert> in config file.\n");
+-			r = -1;
+-		}
+-		if (fparse(config.sslcertkey, "sslcertkey", config.file,
+-		    sizeof(config.sslcertkey)) == -1) {
+-			fprintf(stderr, "Missing <sslcertkey> in config file."
+-			    "\n");
+-			r = -1;
+-		}
+-	}
+ 	if (fparse(config.c401, "custom_401", config.file, sizeof(config.user))
+ 	    == -1)
+ 		config.c401[0] = '\0';
+@@ -671,11 +639,6 @@ main(int argc, char *argv[])
+ 	else
+ 		snprintf(http_url, sizeof(http_url), "%s:%d",
+ 		    config.servername, config.serverport);
+-	if (config.ssl && config.sslport == PRTS)
+-		snprintf(http_urls, sizeof(http_url), "%s", config.servername);
+-	if (config.ssl && config.sslport != PRTS)
+-		snprintf(http_urls, sizeof(http_url), "%s:%d",
+-		    config.servername, config.sslport);
+ 	/* servers connection timeout */
+ 	snprintf(http_fv_alv, sizeof(http_fv_alv), "timeout=%d, max=%d", TON,
+ 	    TON);
+@@ -711,29 +674,6 @@ main(int argc, char *argv[])
+ 	}
+ 
+ 	/*
+-	 * SSL
+-	 */
+-	if (config.ssl) {
+-		/* initialize SSL library */
+-		SSL_load_error_strings();
+-		SSL_library_init();
+-
+-		/* create SSL context */
+-		if ((ssl_ctx = SSL_CTX_new(SSLv23_server_method())) == NULL)
+-			err(1, "SSL_CTX_new");
+-
+-		/* load certificate and private key and check them */
+-		if (SSL_CTX_use_certificate_file(ssl_ctx, config.sslcert,
+-		    SSL_FILETYPE_PEM) != 1)
+-			err(1, "SSL_CTX_use_certificate_file");
+-		if (SSL_CTX_use_PrivateKey_file(ssl_ctx, config.sslcertkey,
+-		    SSL_FILETYPE_PEM) != 1)
+-			err(1, "SSL_CTX_use_PrivateKey_file");
+-		if (SSL_CTX_check_private_key(ssl_ctx) != 1)
+-			err(1, "SSL_CTX_check_private_key");
+-	}
+-
+-	/*
+ 	 * calculate maximal concurrent connections
+ 	 */
+ 	sdlim = CON_MAX;
+@@ -835,75 +775,6 @@ main(int argc, char *argv[])
+ 	}
+ 
+ 	/*
+-	 * IPv4 SSL
+-	 */
+-	if (opt_4 && config.ssl) {
+-		if ((b = strdup(config.serverlisten)) == NULL)
+-			err(1, "strdup");
+-
+-		r = 0;
+-		for (h = strtok(b, " "); h; h = strtok(NULL, " ")) {
+-			/* check for free space in listener socket array */
+-			if (i == LST)
+-				break;
+-
+-			/* if no IPv4 address nor wildcard, skip it */
+-			if (strchr(h, '.') == NULL && *h != '*')
+-				continue;
+-
+-			/* socket */
+-			if ((l[i].sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+-				err(1, "socket");
+-
+-			/* set socket non-blocking */
+-			if (fcntl(l[i].sd, F_SETFL,
+-			    fcntl(l[i].sd, F_GETFL) | O_NONBLOCK) == -1)
+-				err(1, "fcntl");
+-			/* allow rapid reuse of the address */
+-			size = 1;
+-			if (setsockopt(l[i].sd, SOL_SOCKET, SO_REUSEADDR,
+-			    (char *)&size, sizeof(size)) == -1)
+-				err(1, "setsockopt");
+-
+-			/* bind */
+-			sa.sin_family = AF_INET;
+-			sa.sin_port = htons(config.sslport);
+-			if (*h == '*') {
+-				sa.sin_addr.s_addr = INADDR_ANY;
+-				r = 1;
+-			} else {
+-				bzero(&ina, sizeof(struct in_addr));
+-				if (inet_pton(AF_INET, h, &ina) != 1)
+-					err(1, "inet_pton");
+-				sa.sin_addr.s_addr = ina.s_addr;
+-			}
+-			memset(sa.sin_zero, 0, sizeof(sa.sin_zero));
+-			if (bind(l[i].sd, (struct sockaddr *)&sa,
+-			    sizeof(sa)) == -1)
+-				err(1, "bind");
+-
+-			/* listen */
+-			if (listen(l[i].sd, CON) == -1)
+-				err(1, "listen");
+-
+-			/* add ssl listener socket to master set */
+-			FD_SET(l[i].sd, master_r);
+-
+-			/* keep track of the biggest socket descriptor */
+-			sdmax = l[i].sd;
+-
+-			l[i].sdtype = IPALL | IP4SSL;
+-			i++;
+-
+-			/* we use INADDR_ANY, done */
+-			if (r)
+-				break;
+-		}
+-
+-		free(b);
+-	}
+-
+-	/*
+ 	 * IPv6
+ 	 */
+ 	if (opt_6) {
+@@ -979,80 +850,6 @@ main(int argc, char *argv[])
+ 	}
+ 
+ 	/*
+-	 * IPv6 SSL
+-	 */
+-	if (opt_6 && config.ssl) {
+-		if ((b = strdup(config.serverlisten)) == NULL)
+-			err(1, "strdup");
+-
+-		r = 0;
+-		for (h = strtok(b, " "); h; h = strtok(NULL, " ")) {
+-			/* check for free space in listener socket array */
+-			if (i == LST)
+-				break;
+-
+-			/* if no IPv4 address nor wildcard, skip it */
+-			if (strchr(h, ':') == NULL && *h != '*')
+-				continue;
+-
+-			/* socket */
+-			if ((l[i].sd = socket(AF_INET6, SOCK_STREAM, 0)) == -1)
+-				err(1, "socket");
+-
+-			/* set socket non-blocking */
+-			if (fcntl(l[i].sd, F_SETFL,
+-			    fcntl(l[i].sd, F_GETFL) | O_NONBLOCK) == -1)
+-				err(1, "fcntl");
+-			/* allow rapid reuse of the address */
+-			size = 1;
+-			if (setsockopt(l[i].sd, SOL_SOCKET, SO_REUSEADDR,
+-			    (char *)&size, sizeof(size)) == -1)
+-				err(1, "setsockopt");
+-
+-			/* bind */
+-			#ifndef __linux__
+-			sa6.sin6_len = sizeof(sa6);
+-			#endif
+-			sa6.sin6_family = AF_INET6;
+-			sa6.sin6_port = htons(config.sslport);
+-			sa6.sin6_flowinfo = 0;
+-			sa6.sin6_scope_id = 0;
+-			if (*h == '*') {
+-				memcpy(sa6.sin6_addr.s6_addr, &in6addr_any,
+-				    sizeof(in6addr_any));
+-			} else {
+-				//bzero(&ina6, sizeof(struct in6_addr));
+-				if (inet_pton(AF_INET6, h, &ina6.s6_addr) != 1)
+-					err(1, "inet_pton");
+-				memcpy(sa6.sin6_addr.s6_addr, &ina6.s6_addr,
+-				    sizeof(struct in6_addr));
+-			}
+-			if (bind(l[i].sd, (struct sockaddr *)&sa6,
+-			    sizeof(sa6)) == -1)
+-				err(1, "bind");
+-
+-			/* listen */
+-			if (listen(l[i].sd, CON) == -1)
+-				err(1, "listen");
+-
+-			/* add ipv6 listener to master set */
+-			FD_SET(l[i].sd, master_r);
+-
+-			/* keep track of the biggest socket descriptor */
+-			sdmax = l[i].sd;
+-
+-			l[i].sdtype = IPALL | IP6SSL;
+-			i++;
+-
+-			/* we use INADDR_ANY, done */
+-			if (r)
+-				break;
+-		}
+-
+-		free(b);
+-	}
+-
+-	/*
+ 	 * check if we could bind at least to one interface
+ 	 */
+ 	if (i == 0) {
+@@ -1187,8 +984,6 @@ main(int argc, char *argv[])
+ 	syslog(LOG_INFO, "started");
+ 	syslog(LOG_INFO, "max. file descriptors = %d (cur) / %d (max)",
+ 	    (int)rlp.rlim_cur, (int)rlp.rlim_max);
+-	if (config.ssl)
+-		syslog(LOG_INFO, "SSL enabled on port %d", config.sslport);
+ 	if (opt_r)
+ 		syslog(LOG_INFO, "chroot to %s", config.serverroot);
+ 	if (opt_4 && opt_6)
+@@ -1250,19 +1045,11 @@ main(int argc, char *argv[])
+ 			 */
+ 			if (rd > 0 && sdlisten(sdnow, IPALL)) {
+ 				/* accept */
+-				if (sdlisten(sdnow, IP6 | IP6SSL)) {
+-					ssize = sizeof(ca6);
+-					if ((sdnew = accept(sdnow,
+-					    (struct sockaddr *)&ca6, &ssize)) ==
+-					    -1)
+-						continue;
+-				} else {
+ 					ssize = sizeof(ca);
+ 					if ((sdnew = accept(sdnow,
+ 					    (struct sockaddr *)&ca, &ssize)) ==
+ 					    -1)
+ 						continue;
+-				}
+ 
+ 				/* set socket options */
+ 				if (fcntl(sdnew, F_SETFL,
+@@ -1288,29 +1075,12 @@ main(int argc, char *argv[])
+ 				c[sdnew].x_ip6 = 0;
+ 				c[sdnew].x_sta = 0;
+ 
+-				/* SSL ready */
+-				if (sdlisten(sdnow, IP4SSL | IP6SSL)) {
+-					c[sdnew].ssl = SSL_new(ssl_ctx);
+-					SSL_set_fd(c[sdnew].ssl, sdnew);
+-					c[sdnew].x_ssl = 1;
+-				}
+-
+-				/* save ip and port */
+-				if (sdlisten(sdnow, IP6 | IP6SSL)) {
+-					inet_ntop(AF_INET6, &ca6.sin6_addr,
+-					    c[sdnew].ip, sizeof(c[sdnew].ip));
+-					snprintf(c[sdnew].pt,
+-					    sizeof(c[sdnew].pt), "%d",
+-					    ca6.sin6_port);
+-					c[sdnew].x_ip6 = 1;
+-				} else {
+ 					strlcpy(c[sdnew].ip,
+ 					    inet_ntoa(ca.sin_addr),
+ 					    sizeof(c[sdnew].ip));
+ 					snprintf(c[sdnew].pt,
+ 					    sizeof(c[sdnew].pt), "%d",
+ 					    ca.sin_port);
+-				}
+ 
+ 				/* check connection limit */
+ 				if (sdnew == (sdlim - 1)) {
+@@ -1339,24 +1109,6 @@ main(int argc, char *argv[])
+ 			}
+ 
+ 			/*
+-			 * SSL handshake
+-			 */
+-			if (c[sdnow].x_ssl == 1) {
+-				r = SSL_accept(c[sdnow].ssl);
+-				if (r == 1) {
+-					c[sdnow].x_ssl = 2;
+-					continue;
+-				}
+-				erro = SSL_get_error(c[sdnow].ssl, r);
+-				if (erro == SSL_ERROR_WANT_READ)
+-					continue;
+-				if (erro == SSL_ERROR_WANT_WRITE)
+-					continue;
+-				/* SSL handshake error */
+-				goto quit;
+-			}
+-
+-			/*
+ 			 * active connection wants partial file send
+ 			 */
+ 			if (c[sdnow].pfdo > 0) {
+@@ -1411,9 +1163,6 @@ main(int argc, char *argv[])
+ 			/* receive data */
+ 			offset = c[sdnow].rbuf + c[sdnow].roff;
+ 
+-			if (c[sdnow].x_ssl)
+-				r = sys_read_ssl(c[sdnow].ssl, offset, BS);
+-			else
+ 				r = sys_read_a(sdnow, offset, BS);
+ 			if (r < 1)
+ 				goto quit;
+@@ -1531,8 +1280,6 @@ main(int argc, char *argv[])
+ 			/* check keep-alive */
+ 			if (r != 1) {
+ 				quit:
+-				if (c[sdnow].x_ssl)
+-					SSL_free(c[sdnow].ssl);
+ 				c[sdnow].to = 0;
+ 				c[sdnow].x_ip6 = 0;
+ 				c[sdnow].x_ssl = 0;
+Index: nostromo-1.9.5/src/nhttpd/proto.h
+===================================================================
+--- nostromo-1.9.5.orig/src/nhttpd/proto.h
++++ nostromo-1.9.5/src/nhttpd/proto.h
+@@ -61,10 +61,8 @@ void		sys_daemon_bsdauth(void);
+ #endif
+ int		sys_read(const int, char *, const int);
+ int		sys_read_a(const int, char *, const int);
+-int		sys_read_ssl(SSL *, char *, const int);
+ int		sys_write(const int, const char *, const int);
+ int		sys_write_a(const int, const char *, const int);
+-int		sys_write_ssl(SSL *, const char *, const int);
+ int		sys_resetnonblock(const int);
+ int		sys_close_except(const int);
+ void		sys_log(const int, const char *, ...);
+Index: nostromo-1.9.5/src/nhttpd/sys.c
+===================================================================
+--- nostromo-1.9.5.orig/src/nhttpd/sys.c
++++ nostromo-1.9.5/src/nhttpd/sys.c
+@@ -23,7 +23,6 @@
+ #include <dirent.h>
+ #include <errno.h>
+ #include <fcntl.h>
+-#include <openssl/ssl.h>
+ #include <stdarg.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -339,55 +338,6 @@ sys_read_a(const int sfd, char *buf, con
+ }
+ 
+ /*
+- * sys_read_ssl()
+- *	handle SSL_read
+- * Return:
+- *	>0 = bytes read, 0 = socket closed, -1 = error
+- */
+-int
+-sys_read_ssl(SSL *ssl, char *buf, const int len)
+-{
+-	int	r, erro, got;
+-
+-	got = 0;
+-
+-	for (;;) {
+-		r = SSL_read(ssl, buf + got, len - got);
+-
+-		if (r == -1) {
+-			erro = SSL_get_error(ssl, r);
+-
+-			if (erro == SSL_ERROR_WANT_WRITE) {
+-				sys_log(debug, "sys_read_ssl: WANT_WRITE: %d",
+-				    got);
+-				return (got);
+-			}
+-			if (erro == SSL_ERROR_WANT_READ) {
+-				sys_log(debug, "sys_read_ssl: WANT_READ: %d",
+-				    got);
+-				return (got);
+-			}
+-			syslog(LOG_ERR, "sys_read_ssl");
+-			return (r);
+-		}
+-
+-		/* socket closed by remote */
+-		if (r == 0)
+-			return (got);
+-
+-		/* got data */
+-		if (r > 0)
+-			got += r;
+-
+-		/* buffer full */
+-		if (got == len)
+-			break;
+-	}
+-
+-	return (got);
+-}
+-
+-/*
+  * sys_write()
+  *	synchronous write
+  *	used for non-blocking and blocking sockets
+@@ -466,51 +416,6 @@ sys_write_a(const int sfd, const char *b
+ 			return (r);
+ 		}
+ 
+-		/* sent data */
+-		if (r > 0)
+-			sent += r;
+-
+-		/* sent all */
+-		if (sent == len)
+-			break;
+-	}
+-
+-	return (sent);
+-}
+-
+-/*
+- * sys_write_ssl()
+- *	handle SSL_write
+- * Return:
+- *	>0 = bytes written, 0 = nothing written, -1 = error
+- */
+-int
+-sys_write_ssl(SSL *ssl, const char *buf, const int len)
+-{
+-	int	r, erro, sent;
+-
+-	sent = 0;
+-
+-	for (;;) {
+-		r = SSL_write(ssl, buf + sent, len - sent);
+-
+-		if (r == -1) {
+-			erro = SSL_get_error(ssl, r);
+-
+-			if (erro == SSL_ERROR_WANT_WRITE) {
+-				sys_log(debug, "sys_write_ssl: WANT_WRITE: %d",
+-				    sent);
+-				return (sent);
+-			}
+-			if (erro == SSL_ERROR_WANT_READ) {
+-				sys_log(debug, "sys_write_ssl: WANT_READ: %d",
+-				    sent);
+-				return (sent);
+-			}
+-			syslog(LOG_ERR, "sys_write_ssl");
+-			return (r);
+-		}
+-
+ 		/* sent data */
+ 		if (r > 0)
+ 			sent += r;

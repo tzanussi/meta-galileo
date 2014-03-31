@@ -9,14 +9,13 @@ SRC_URI = "http://www.nazgul.ch/dev/${BPN}-${PV}.tar.gz \
            file://volatiles \
            file://tmpfiles.conf \
            file://nostromo \
+           file://rm-ssl.patch \
 "
 
 SRC_URI[md5sum] = "dc6cfd6b5aae04c370c7f818fa7bde55"
 SRC_URI[sha256sum] = "5f62578285e02449406b46cf06a7888fe3dc4a90bedf58cc18523bad62f6b914"
 
 TARGET_CC_ARCH += "${LDFLAGS}"
-
-DEPENDS = "openssl"
 
 RDEPENDS_${PN} = "micro-cgi"
 
