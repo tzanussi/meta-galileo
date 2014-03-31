@@ -13,20 +13,18 @@ IMAGE_FEATURES += "ssh-server-dropbear"
 IMAGE_ROOTFS_SIZE = "512"
 #IMAGE_EXTRA_SPACE = "20000"
 
-IMAGE_INSTALL += "ethtool"
-#IMAGE_INSTALL += "lighttpd"
 IMAGE_INSTALL += "nostromo"
 
 EXTRA_IMAGEDEPENDS = "grub-conf"
 
 # net development packages, normally off
+NET_DEV_INSTALL += "ethtool"
 NET_DEV_INSTALL += "lwip-echo"
 NET_DEV_INSTALL += "lwip-udp-echo"
-#NET_DEV_INSTALL += "lwip-simhost"
 NET_DEV_INSTALL += "sendraw"
 NET_DEV_INSTALL += "recvraw"
 # comment to add net dev packages
-# NET_DEV_INSTALL = ""
+NET_DEV_INSTALL = ""
 
 IMAGE_DEV_INSTALL += "strace"
 IMAGE_DEV_INSTALL += "openssh"
