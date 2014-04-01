@@ -6,56 +6,98 @@ KBRANCH = "standard/micro/galileo"
 
 SRC_URI = "git:///home/trz/yocto/micro-test/linux-yocto-micro-3-13.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet;name=machine,meta,net-diet"
 
-KERNEL_FEATURES_append_galileo += " cfg/perf-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/acpi-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/block-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/pcie-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/mmc-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/mtd-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/nohz-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/misc-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/slob.scc"
-KERNEL_FEATURES_append_galileo += " cfg/bug-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/printk-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/user-io-disable.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/proc-disable.scc"
+# We want MICRO features for a micro build
+KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
+                        cfg/acpi-disable.scc \
+			cfg/block-disable.scc \
+			cfg/pcie-disable.scc \
+			cfg/mmc-disable.scc \
+			cfg/mtd-disable.scc \
+			cfg/nohz-disable.scc \
+			cfg/misc-disable.scc \
+			cfg/bug-disable.scc \
+			cfg/printk-disable.scc \
+			cfg/user-io-disable.scc \
+			cfg/proc-sysctl-disable.scc \
+			cfg/preempt-none.scc \
+			cfg/crypto-disable.scc \
+			cfg/hrt-disable.scc \
+			cfg/x86-verbose-boot-disable.scc \
+			features/net/diet.scc \
+			"
 
-#KERNEL_FEATURES_append_galileo += " cfg/inet-disable.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net-disable.scc"
-
-# Don't forget to turn on perf if enabling ftrace (compile problems)
+# Keep TRACING out unless we're tracing
+# Turn on perf if enabling ftrace (compile problems)
 # Also, stacktrace and hash triggers require frame pointers
-#KERNEL_FEATURES_append_galileo += " cfg/frame-pointers-enable.scc"
-#KERNEL_FEATURES_append_galileo += " features/ftrace/ftrace.scc"
-KERNEL_FEATURES_append_galileo += " features/ftrace/ftrace.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/kallsyms-enable.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/loglevel-debug.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/slub.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/slub-stats.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/gpio-user.scc"
+KERNEL_FEATURES_TRACING = "cfg/perf-enable.scc \
+			   cfg/printk-enable.scc \
+			   cfg/bug-enable.scc \
+			   cfg/frame-pointers-enable.scc \
+			   features/ftrace/ftrace.scc \
+			   cfg/kallsyms-enable.scc \
+			   cfg/loglevel-debug.scc \
+			   cfg/slub.scc \
+			   cfg/slub-stats.scc \
+			   features/lto/lto-disable.scc \
+			   cfg/x86-verbose-boot-enable.scc \
+			   "
 
-KERNEL_FEATURES_append_galileo += " features/net/diet.scc"
+# We want LTO for a micro build
+# Turn ftrace off if using lto
+KERNEL_FEATURES_LTO = "features/lto/lto.scc \
+		      features/ftrace/ftrace-disable.scc \
+		      "
 
-# Don't forget to turn ftrace off if using lto
-KERNEL_FEATURES_append_galileo += " features/lto/lto.scc"
+# We don't want these NET features for a micro build
+# Add NET only if you really need to; we normally
+# want them off to save space and networking should work
+# fine without them
+KERNEL_FEATURES_NET = "cfg/net/ip-ping.scc \
+		      cfg/net/tcp-metrics.scc \
+		      cfg/net/ethtool.scc \
+		      cfg/net/lpf-filter.scc \
+		      cfg/net/rtnetlink.scc \
+		      cfg/net/ip-offload.scc \
+		      cfg/net/mib-stats.scc\
+		      cfg/net/tcp-fastopen.scc \
+		      cfg/net/inet-raw.scc \
+		      cfg/net/packet-mmap.scc \
+		      cfg/net/fib-list.scc \
+		      "
 
-#KERNEL_FEATURES_append_galileo += " cfg/net/ip-ping.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/tcp-metrics.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/ethtool.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/lpf-filter.scc"
-KERNEL_FEATURES_append_galileo += " cfg/net/rtnetlink.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/ip-offload.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/mib-stats.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/tcp-fastopen.scc"
-KERNEL_FEATURES_append_galileo += " cfg/net/inet-raw.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/packet-mmap.scc"
-#KERNEL_FEATURES_append_galileo += " cfg/net/fib-list.scc"
+# These are things we always need for the time being
+# i.e. work still needs to be done to get rid of them
+KERNEL_FEATURES_TMP = "cfg/net/rtnetlink.scc \
+                      cfg/net/inet-raw.scc \
+                      "
 
-#KERNEL_FEATURES_append_galileo += " cfg/proc-sysctl-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/preempt-none.scc"
-KERNEL_FEATURES_append_galileo += " cfg/crypto-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/hrt-disable.scc"
-KERNEL_FEATURES_append_galileo += " cfg/x86-verbose-boot-disable.scc"
+# These are things we could use if we wanted to
+# i.e. work still needs to be done to use them
+KERNEL_FEATURES_AVAIL = "cfg/slob.scc \
+                        cfg/proc-disable.scc \
+			"
+
+# These are things that only make sense for size comparisons
+KERNEL_FEATURES_BUILD_ONLY = "cfg/net-disable.scc"
+
+# These are things we use for lwip builds
+KERNEL_FEATURES_LWIP = "cfg/inet-disable.scc"
+
+# micro
+KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
+                                  ${KERNEL_FEATURES_LTO} \
+                                  "
+
+# tracing
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
+                                   ${KERNEL_FEATURES_TRACING} \
+                                   ${KERNEL_FEATURES_TMP} \
+                                   "
+
+# tracing-full
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_TRACING} \
+#                                   ${KERNEL_FEATURES_TMP} \
+#                                   "
 
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
