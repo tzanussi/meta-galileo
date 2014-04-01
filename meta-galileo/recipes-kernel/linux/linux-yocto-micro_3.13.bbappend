@@ -26,6 +26,10 @@ KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
 			features/net/diet.scc \
 			"
 
+KERNEL_FEATURES_MICRO_TEST = "cfg/acpi-disable.scc \
+			"
+
+
 # Keep TRACING out unless we're tracing
 # Turn on perf if enabling ftrace (compile problems)
 # Also, stacktrace and hash triggers require frame pointers
@@ -89,10 +93,10 @@ KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
                                   "
 
 # tracing
-#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
-                                   ${KERNEL_FEATURES_TRACING} \
-                                   ${KERNEL_FEATURES_TMP} \
-                                   "
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO_TEST} \
+#                                   ${KERNEL_FEATURES_TRACING} \
+#                                   ${KERNEL_FEATURES_TMP} \
+#                                   "
 
 # tracing-full
 #KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_TRACING} \
