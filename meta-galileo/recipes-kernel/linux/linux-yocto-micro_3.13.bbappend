@@ -23,12 +23,12 @@ KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
 			cfg/crypto-disable.scc \
 			cfg/hrt-disable.scc \
 			cfg/x86-verbose-boot-disable.scc \
+			cfg/slob.scc \
 			features/net/diet.scc \
 			"
 
 KERNEL_FEATURES_MICRO_TEST = "cfg/acpi-disable.scc \
 			"
-
 
 # Keep TRACING out unless we're tracing
 # Turn on perf if enabling ftrace (compile problems)
