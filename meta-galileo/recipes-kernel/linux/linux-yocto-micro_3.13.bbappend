@@ -25,6 +25,8 @@ KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
 			cfg/x86-verbose-boot-disable.scc \
 			cfg/slob.scc \
 			features/net/diet.scc \
+			cfg/net/ipv6-disable.scc \
+			cfg/net/packet-disable.scc \
 			"
 
 KERNEL_FEATURES_MICRO_TEST = "cfg/acpi-disable.scc \
