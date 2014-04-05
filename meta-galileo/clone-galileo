@@ -1,0 +1,76 @@
+#!/bin/bash
+# usage: clone-galileo <dirname>
+#
+# After running this script, cd into <dirname> and source the environment:
+#
+# cd <dirname>
+# source oe-init-build-env
+
+# Add meta-intel and meta-intel/meta-galileo to BBLAYERS in
+# build/conf/bblayers.conf e.g:
+
+#  /home/trz/yocto/micro/meta-intel \
+#  /home/trz/yocto/micro/meta-intel/meta-galileo \
+
+# Uncommment the following in build/conf/local.conf:
+# BB_NUMBER_THREADS ?= "4"
+# PARALLEL_MAKE ?= "-j 4"
+
+# Add to build/conf/local.conf (before MACHINE ??= "qemux86"):
+# MACHINE ?= "galileo"
+# DISTRO ?= "poky-micro"
+
+# change SRC_URI in meta-intel/meta-galileo/recipes-kernel/linux/linux-yocto-micro_3.13.bbappend to the actual location of linux-yocto-micro-3-13.git (in your top-level poky dir) e.g.:
+
+# SRC_URI = "git:///home/trz/yocto/micro-cur/linux-yocto-micro-3-13.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet,lto;name=machine,meta,net-diet,lto"
+
+# Build the image:
+# bitbake image-micro
+
+# Create a bootable sdcard image:
+#
+# $ wic create micro-galileo -e image-micro
+#
+# The output will tell you the location of the .direct image
+# Burn that to the sdcard and boot the galileo board from it:
+#
+# $ sudo dd if=micro-galileo-201404041056-mmcblk0.direct of=/dev/sdg
+#
+# Just doing nothing will boot into the microYocto image
+#
+# The built-in IP address is 192.168.1.223.  To change it, you'll
+# either need to do it manually after boot, or change the meta-galileo
+# layer and rebuild.
+#
+# ssh to that address and login as root with no password:
+#
+# $ ssh -l root 192.168.1.223
+#
+
+mkdir $1
+cd $1
+
+git init
+git remote add poky git@git.yoctoproject.org:user-contrib/tom.zanussi@intel.com/poky
+git remote update
+git checkout -b daisy0 poky/daisy
+git checkout -f
+
+mkdir meta-intel
+cd meta-intel
+git init
+git remote add meta-intel git://git.yoctoproject.org/meta-intel
+git remote update
+git checkout -b daisy0 meta-intel/master
+git checkout -f
+
+mkdir meta-galileo
+cd meta-galileo
+git init
+git remote add meta-galileo git@git.yoctoproject.org:user-contrib/tom.zanussi@intel.com/meta-galileo
+git remote update
+git checkout -b daisy0 meta-galileo/daisy
+git checkout -f
+
+cd ../..
+
