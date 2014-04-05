@@ -71,12 +71,6 @@ KERNEL_FEATURES_NET = "cfg/net/ip-ping.scc \
 		      cfg/net/fib-list.scc \
 		      "
 
-# These are things we always need for the time being
-# i.e. work still needs to be done to get rid of them
-KERNEL_FEATURES_TMP = "cfg/net/rtnetlink.scc \
-                      cfg/net/inet-raw.scc \
-                      "
-
 # These are things we could use if we wanted to
 # i.e. work still needs to be done to use them
 KERNEL_FEATURES_AVAIL = "cfg/slob.scc \
@@ -94,15 +88,19 @@ KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
                                   ${KERNEL_FEATURES_LTO} \
                                   "
 
+# lwip
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
+#    			           ${KERNEL_FEATURES_LWIP} \
+#			           ${KERNEL_FEATURES_LTO} \
+#			           "
+
 # tracing
 #KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO_TEST} \
 #                                   ${KERNEL_FEATURES_TRACING} \
-#                                   ${KERNEL_FEATURES_TMP} \
 #                                   "
 
 # tracing-full
 #KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_TRACING} \
-#                                   ${KERNEL_FEATURES_TMP} \
 #                                   "
 
 SRCREV_machine_${MACHINE}="${AUTOREV}"
