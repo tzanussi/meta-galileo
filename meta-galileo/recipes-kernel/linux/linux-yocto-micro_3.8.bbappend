@@ -4,7 +4,7 @@ PR := "${PR}.1"
 
 KBRANCH = "standard/micro/galileo"
 
-SRC_URI = "git:///home/trz/yocto/micro-test/micro_yocto-linux-yocto-3-8-galileo.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA};name=machine,meta"
+#SRC_URI = "git:///home/trz/yocto/micro-test/micro_yocto-linux-yocto-3-8-galileo.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA};name=machine,meta"
 
 # KERNEL_FEATURES_append_galileo += " cfg/acpi-disable.scc"
 # KERNEL_FEATURES_append_galileo += " cfg/block-disable.scc"
