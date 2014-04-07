@@ -84,8 +84,16 @@ KERNEL_FEATURES_BUILD_ONLY = "cfg/net-disable.scc"
 KERNEL_FEATURES_LWIP = "cfg/inet-disable.scc"
 
 # micro
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
+#				   ${KERNEL_FEATURES_LTO} \
+#			           "
+
+# micro test
 KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
                                   ${KERNEL_FEATURES_LTO} \
+				  cfg/slub.scc \
+				  cfg/slub-stats.scc \
+				  cfg/net/inet-raw.scc \
                                   "
 
 # lwip
