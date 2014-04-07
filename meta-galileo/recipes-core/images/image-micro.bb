@@ -11,8 +11,6 @@ inherit core-image
 IMAGE_ROOTFS_SIZE = "512"
 #IMAGE_EXTRA_SPACE = "20000"
 
-IMAGE_INSTALL += "nostromo"
-
 EXTRA_IMAGEDEPENDS = "grub-conf"
 
 #IMAGE_FSTYPES += "jffs2"
