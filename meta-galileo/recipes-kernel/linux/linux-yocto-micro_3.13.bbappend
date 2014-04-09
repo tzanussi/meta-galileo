@@ -27,6 +27,7 @@ KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
 			features/net/diet.scc \
 			cfg/net/ipv6-disable.scc \
 			cfg/net/packet-disable.scc \
+			cfg/proc-min-enable.scc \
 			"
 
 KERNEL_FEATURES_MICRO_TEST = "cfg/acpi-disable.scc \
@@ -84,17 +85,17 @@ KERNEL_FEATURES_BUILD_ONLY = "cfg/net-disable.scc"
 KERNEL_FEATURES_LWIP = "cfg/inet-disable.scc"
 
 # micro
-#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
-#				   ${KERNEL_FEATURES_LTO} \
-#			           "
-
-# micro test
 KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
                                   ${KERNEL_FEATURES_LTO} \
-				  cfg/slub.scc \
-				  cfg/slub-stats.scc \
-				  cfg/net/inet-raw.scc \
                                   "
+
+# micro test
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
+#			           ${KERNEL_FEATURES_LTO} \
+#			           cfg/slub.scc \
+#			           cfg/slub-stats.scc \
+#			           cfg/net/inet-raw.scc \
+#			           "
 
 # lwip
 #KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \

@@ -8,6 +8,8 @@ LICENSE = "GPLv2"
 
 inherit core-image
 
+IMAGE_INSTALL += "nostromo"
+
 IMAGE_ROOTFS_SIZE = "512"
 #IMAGE_EXTRA_SPACE = "20000"
 
