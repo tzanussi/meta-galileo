@@ -28,6 +28,7 @@ KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
 			cfg/net/ipv6-disable.scc \
 			cfg/net/packet-disable.scc \
 			cfg/proc-min-enable.scc \
+			cfg/sysfs-disable.scc \
 			"
 
 KERNEL_FEATURES_MICRO_TEST = "cfg/acpi-disable.scc \
@@ -51,8 +52,8 @@ KERNEL_FEATURES_TRACING = "cfg/perf-enable.scc \
 
 # We want LTO for a micro build
 # Turn ftrace off if using lto
-KERNEL_FEATURES_LTO = "features/lto/lto.scc \
-		      features/ftrace/ftrace-disable.scc \
+KERNEL_FEATURES_LTO = "features/ftrace/ftrace-disable.scc \
+		      features/lto/lto.scc \
 		      "
 
 # We don't want these NET features for a micro build
