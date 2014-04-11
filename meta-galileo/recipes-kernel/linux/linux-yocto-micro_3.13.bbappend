@@ -73,17 +73,11 @@ KERNEL_FEATURES_NET = "cfg/net/ip-ping.scc \
 		      cfg/net/fib-list.scc \
 		      "
 
-# These are things we could use if we wanted to
-# i.e. work still needs to be done to use them
-KERNEL_FEATURES_AVAIL = "cfg/slob.scc \
-                        cfg/proc-disable.scc \
-			"
-
-# These are things that only make sense for size comparisons
-KERNEL_FEATURES_BUILD_ONLY = "cfg/net-disable.scc"
-
 # These are things we use for lwip builds
 KERNEL_FEATURES_LWIP = "cfg/inet-disable.scc"
+
+# These are things we use for netless builds
+KERNEL_FEATURES_NONET = "cfg/net-disable.scc"
 
 # micro
 KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
@@ -101,6 +95,12 @@ KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
 # lwip
 #KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
 #    			           ${KERNEL_FEATURES_LWIP} \
+#			           ${KERNEL_FEATURES_LTO} \
+#			           "
+
+# nonet
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
+#			           ${KERNEL_FEATURES_NONET} \
 #			           ${KERNEL_FEATURES_LTO} \
 #			           "
 
