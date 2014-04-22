@@ -4,7 +4,7 @@ PR := "${PR}.1"
 
 KBRANCH = "standard/micro/galileo"
 
-SRC_URI = "git:///home/trz/yocto/micro-test/linux-yocto-micro-3-13.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet;name=machine,meta,net-diet"
+SRC_URI = "git:///home/trz/yocto/micro/linux-yocto-micro-3-13.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet,lto;name=machine,meta,net-diet,lto"
 
 # We want MICRO features for a micro build
 KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
@@ -116,6 +116,7 @@ KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
 SRCREV_machine_${MACHINE}="${AUTOREV}"
 SRCREV_meta="${AUTOREV}"
 SRCREV_net-diet="${AUTOREV}"
+SRCREV_lto="${AUTOREV}"
 LOCALCOUNT = "0"
 
 COMPATIBLE_MACHINE_ = "galileo"
