@@ -29,6 +29,7 @@ KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
 			cfg/net/packet-disable.scc \
 			cfg/proc-min-enable.scc \
 			cfg/sysfs-disable.scc \
+			cfg/splice-disable.scc \
 			"
 
 KERNEL_FEATURES_MICRO_TEST = "cfg/acpi-disable.scc \
@@ -83,6 +84,10 @@ KERNEL_FEATURES_NONET = "cfg/net-disable.scc"
 KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
                                   ${KERNEL_FEATURES_LTO} \
                                   "
+
+# micro - no lto
+#KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
+#                                  "
 
 # micro test
 #KERNEL_FEATURES_append_galileo += "${KERNEL_FEATURES_MICRO} \
