@@ -32,6 +32,7 @@ KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
 			cfg/splice-disable.scc \
 			cfg/sysfs-syscall-disable.scc \
 			cfg/uselib-disable.scc \
+			cfg/pty-enable.scc \
 			"
 
 KERNEL_FEATURES_MICRO_TEST = "cfg/acpi-disable.scc \
