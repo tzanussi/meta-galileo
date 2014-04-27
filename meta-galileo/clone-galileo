@@ -12,17 +12,9 @@
 #  /home/trz/yocto/micro/meta-intel \
 #  /home/trz/yocto/micro/meta-intel/meta-galileo \
 
-# Uncommment the following in build/conf/local.conf:
-# BB_NUMBER_THREADS ?= "4"
-# PARALLEL_MAKE ?= "-j 4"
-
 # Add to build/conf/local.conf (before MACHINE ??= "qemux86"):
 # MACHINE ?= "galileo"
 # DISTRO ?= "poky-micro"
-
-# change SRC_URI in meta-intel/meta-galileo/recipes-kernel/linux/linux-yocto-micro_3.13.bbappend to the actual location of linux-yocto-micro-3-13.git (in your top-level poky dir) e.g.:
-
-# SRC_URI = "git:///home/trz/yocto/micro-cur/linux-yocto-micro-3-13.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet,lto;name=machine,meta,net-diet,lto"
 
 # Build the image:
 # bitbake image-micro
@@ -51,7 +43,7 @@ mkdir $1
 cd $1
 
 git init
-git remote add poky git@git.yoctoproject.org:user-contrib/tom.zanussi@intel.com/poky
+git remote add poky https://github.com/tzanussi/poky.git
 git remote update
 git checkout -b daisy0 poky/daisy
 git checkout -f
@@ -59,18 +51,10 @@ git checkout -f
 mkdir meta-intel
 cd meta-intel
 git init
-git remote add meta-intel git://git.yoctoproject.org/meta-intel
-git remote update
-git checkout -b daisy0 meta-intel/master
-git checkout -f
-
-mkdir meta-galileo
-cd meta-galileo
-git init
-git remote add meta-galileo git@git.yoctoproject.org:user-contrib/tom.zanussi@intel.com/meta-galileo
+git remote add meta-galileo https://github.com/tzanussi/meta-galileo.git
 git remote update
 git checkout -b daisy0 meta-galileo/daisy
 git checkout -f
 
-cd ../..
+cd ..
 

@@ -11,24 +11,16 @@ This layer depends on:
   URI: git://git.openembedded.org/bitbake
   branch: dora
 
-  URI: git://git.openembedded.org/openembedded-core
-  layers: meta
-  branch: dora
-
-  URI: git://git.yoctoproject.org/poky
+  URI: git://github.com/tzanussi/poky.git
   layers: poky
   branch: dora
 
-  URI: git://git.yoctoproject.org/meta-intel
-  layers: meta-intel
-  branch: dora
-
-  URI: git://git.yoctoproject.org/meta-intel-contrib
+  URI: https://github.com/tzanussi/meta-galileo.git
   layers: meta-galileo
   branch: dora
 
-  URI: git://git.yoctoproject.org/linux-yocto-contrib
-  layers: linux-yocto-micro-3.13
+  URI: git://github.com/tzanussi/linux-yocto-micro-3.14.git
+  layers: linux-yocto-micro-3.14
   branch: meta, lto, net-diet, standard/micro/galileo
 
 
@@ -49,8 +41,6 @@ Table of Contents
 I. Building the meta-galileo BSP layer
 ========================================
 
---- replace with specific instructions for your layer ---
-
 Use the clone-galileo script in this directory to set up
 
   $ clone-galileo <dirname>
@@ -66,23 +56,11 @@ build/conf/bblayers.conf e.g:
   /home/trz/yocto/micro/meta-intel \
   /home/trz/yocto/micro/meta-intel/meta-galileo \
 
-Uncommment the following in build/conf/local.conf:
-
-  # BB_NUMBER_THREADS ?= "4"
-  # PARALLEL_MAKE ?= "-j 4"
-
 Add to build/conf/local.conf (before MACHINE ??= "qemux86"):
 
   MACHINE ?= "galileo"
   DISTRO ?= "poky-micro"
  
-Change SRC_URI in
-meta-intel/meta-galileo/recipes-kernel/linux/linux-yocto-micro_3.13.bbappend
-to the actual location of linux-yocto-3-13-galileo.git (in your
-top-level poky dir) e.g.:
-
-  SRC_URI = "git:///home/trz/yocto/micro-cur/linux-yocto-3-13-galileo.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet,lto;name=machine,meta,net-diet,lto"
-
 Build the image:
 
   $ bitbake image-micro
