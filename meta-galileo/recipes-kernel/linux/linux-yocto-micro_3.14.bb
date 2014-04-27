@@ -19,9 +19,8 @@ KMETA = "meta"
 PR = "${INC_PR}.1"
 PV = "${LINUX_VERSION}+git${SRCPV}"
 
-SRC_URI = "git://git.yoctoproject.org/linux-yocto-micro-3.14.git;bareclone=1;branch=${KBRANCH},meta;name=machine,meta"
+SRC_URI = "git://github.com/tzanussi/linux-yocto-micro-3.14.git;bareclone=1;branch=${KBRANCH},meta;name=machine,meta"
 
-#COMPATIBLE_MACHINE = "(qemux86)"
 COMPATIBLE_MACHINE = "(galileo)"
 
 # Functionality flags

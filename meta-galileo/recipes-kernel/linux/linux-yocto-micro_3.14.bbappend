@@ -4,7 +4,7 @@ PR := "${PR}.1"
 
 KBRANCH = "standard/micro/galileo"
 
-SRC_URI = "git:///home/trz/yocto/micro/linux-yocto-micro-3.14.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet,lto;name=machine,meta,net-diet,lto"
+#SRC_URI = "git:///home/trz/yocto/micro/linux-yocto-micro-3.14.git;protocol=file;bareclone=1;branch=${KBRANCH},${KMETA},net-diet,lto;name=machine,meta,net-diet,lto"
 
 # We want MICRO features for a micro build
 KERNEL_FEATURES_MICRO = "cfg/perf-disable.scc \
