@@ -41,7 +41,11 @@ Table of Contents
 I. Building the meta-galileo BSP layer
 ========================================
 
-Use the clone-galileo script in this directory to set up
+Get the clone-galileo script:
+
+  $ wget https://github.com/tzanussi/meta-galileo/raw/daisy/meta-galileo/clone-galileo
+
+Use the clone-galileo script to set things up:
 
   $ clone-galileo <dirname>
 
@@ -83,3 +87,19 @@ and rebuild.
 ssh to that address and login as root with no password:
 
   $ ssh -l root 192.168.1.223
+
+If you run into build problems, please make sure you have a sane build
+environment.  Going throut the Yocto Project Quickstart first should
+ensure that you do:
+
+  https://www.yoctoproject.org/docs/current/yocto-project-qs/yocto-project-qs.html
+
+There's also a whole host of other documentation there which may be of
+interest:
+
+https://www.yoctoproject.org/documentation
+
+For any other questions/comments (or even build questions if you get
+stuck), feel free to contact me at:
+
+  tom.zanussi@linux.intel.com
